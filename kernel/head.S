@@ -1,18 +1,3 @@
-/***************************************************
-*		版权声明
-*
-*	本操作系统名为：MINE
-*	该操作系统未经授权不得以盈利或非盈利为目的进行开发，
-*	只允许个人学习以及公开交流使用
-*
-*	代码最终所有权及解释权归田宇所有；
-*
-*	本模块作者：	田宇
-*	EMail:		345538255@qq.com
-*
-*
-***************************************************/
-
 .section .text
 
 .globl _start
@@ -65,6 +50,50 @@ entry64:
 	movq	%rax,	%ss
 	movq	$0xffff800000007E00,	%rsp		/* rsp address */
 
+setup_IDT:
+	leaq	ignore_int(%rip),	%rdx
+	movq	$(0x08 << 16),	%rax        // rax=1000 0000 0000 0000 0000b = 0x80000
+	movw	%dx,	%ax                       //   rax=0x8****
+	movq	$(0x8E00 << 32),	%rcx		//  rcx=0x8e00 0000 0000
+	addq	%rcx,	%rax                        //   rax=0x8e00 0008 ****
+	movl	%edx,	%ecx                      //  rcx=0x8e00 ++++ ****
+	shrl	$16,	%ecx						//  rcx=0x8e00 0000 ++++ 
+	shlq	$48,	%rcx						//  rcx=++++ 0000 0000 0000
+	addq	%rcx,	%rax                       //  rax=0x++++ 8e00 0008 ****
+	shrq $32, %rdx
+	leaq IDT_Table(%rip), %rdi
+	mov $256, %rcx
+rp_sidt:
+	movq %rax, (%rdi)
+	movq %rdx, 8(%rdi)
+	addq $0x10, %rdi
+	dec %rcx
+	jne rp_sidt
+
+setup_TSS64:
+	leaq TSS64_Table(%rip), %rdx
+	xorq %rax, %rax
+	xorq %rcx, %rcx
+	movq $0x89, %rax                // rax=1000 1001
+	shlq $40, %rax                     // rax=1000 1001 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000b=0x8900 0000 0000
+	movl %edx, %ecx                  // ecx=0x**++ ++++
+	shrl $24, %ecx                    //  ecx=0x**
+	shlq $56, %rcx                    //  rcx=0x**00 0000 0000 0000
+	addq %rcx, %rax                  //  rax=0x**00 8900 0000 0000
+	xorq %rcx, %rcx                   //  rcx=0x0
+	movl %edx, %ecx                //  ecx=0x**++ ++++
+	andl $0xffffff, %ecx             //  ecx=0x++ ++++
+	shlq $16, %rcx                   //  rcx=0x++ ++++ 0000
+	addq %rcx, %rax                  //  rax=0x**00 89++ ++++ 0000
+	addq $103, %rax                 //  rax=0x**00 89++ ++++ 0067    103 is the length of tss
+	leaq GDT_Table(%rip), %rdi
+	movq %rax, 64(%rdi)
+	shrq $32, %rdx
+	movq %rdx, 72(%rdi)
+
+	mov $0x40, %ax        // offset of tss descriptor in gdt
+	ltr %ax
+
 	movq	go_to_kernel(%rip),	%rax		/* movq address */
 	pushq	$0x08
 	pushq	%rax
@@ -72,6 +101,73 @@ entry64:
 
 go_to_kernel:
 	.quad	Start_Kernel
+
+//  ignore_int
+ignore_int:
+	cld
+	pushq %rax
+	pushq %rbx
+	pushq %rcx
+	pushq %rdx
+	pushq %rbp
+	pushq %rdi
+	pushq %rsi
+
+	pushq %r8
+	pushq %r9
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+
+	movq %es, %rax
+	pushq %rax
+	movq %ds, %rax
+	pushq %rax
+
+	movq $0x10, %rax
+	movq %rax, %ds
+	movq %rax, %es
+
+	leaq int_msg(%rip), %rax
+	pushq %rax
+	movq %rax, %rdx
+	movq $0x00000000, %rsi
+	movq $0x00ff0000, %rdi
+	movq $0, %rax
+	callq color_printk
+	addq $0x8, %rsp
+
+Loop:
+	jmp Loop
+
+	popq %rax
+	movq %rax, %ds
+	popq %rax
+	movq %rax, %es
+
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+
+	popq %rsi
+	popq %rdi
+	popq %rbp
+	popq %rdx
+	popq %rcx
+	popq %rbx
+	popq %rax
+
+	iretq
+
+int_msg:
+	.asciz "Unknown interrupt or fault at RIP\n"
 
 //=======	init page
 .align 8

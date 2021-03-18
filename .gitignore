@@ -1,0 +1,9 @@
+*.o
+
+*.bin
+
+/kernel/system
+
+*.s
+
+*.img
