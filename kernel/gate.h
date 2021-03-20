@@ -21,6 +21,7 @@ do                                                                              
                     "addq   %4, %%rcx   \n\t"                                \
                     "shlq   $32,    %%rcx   \n\t"                            \
                     "addq   %%rcx,  %%rax   \n\t"                          \
+                    "xorq   %%rcx,  %%rcx   \n\t"                           \
                     "movl %%edx,    %%ecx   \n\t"                         \
                     "shrq   $16,    %%rcx   \n\t"                            \
                     "shlq   $48,    %%rcx   \n\t"                            \
@@ -36,6 +37,31 @@ do                                                                              
      );                                                                                   \
 }while(0)
 
+#define load_TR(n)  \
+do {    \
+    __asm__ __volatile__(   "ltr    %%ax"      \
+                :               \
+                :"a"(n << 3)    \
+                :"memory");     \
+}while(0)
+
 inline void set_trap_gate(unsigned int n, unsigned char ist, void *addr) {
     _set_gate(IDT_Table + n, 0x8F, ist, addr);
 }
+
+void set_tss64(unsigned long rsp0, unsigned long rsp1, unsigned long rsp2, unsigned long ist1, unsigned long ist2,
+                    unsigned long ist3, unsigned long ist4, unsigned long ist5, unsigned long ist6, unsigned long ist7) {
+    *(unsigned long *)(TSS64_Table+1) = rsp0;
+    *(unsigned long *)(TSS64_Table+3) = rsp1;
+    *(unsigned long *)(TSS64_Table+5) = rsp2;
+
+    *(unsigned long *)(TSS64_Table+9) = ist1;
+    *(unsigned long *)(TSS64_Table+11) = ist2;
+    *(unsigned long *)(TSS64_Table+13) = ist3;
+    *(unsigned long *)(TSS64_Table+15) = ist4;
+    *(unsigned long *)(TSS64_Table+17) = ist5;
+    *(unsigned long *)(TSS64_Table+19) = ist6;
+    *(unsigned long *)(TSS64_Table+21) = ist7;
+}
+
+#endif

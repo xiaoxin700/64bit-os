@@ -3,7 +3,6 @@
 .globl _start
 
 _start:
-
 	mov	$0x10,	%ax
 	mov	%ax,	%ds
 	mov	%ax,	%es
@@ -11,11 +10,7 @@ _start:
 	mov	%ax,	%ss
 	mov	$0x7E00,	%esp
 
-//=======	load GDTR
-
 	lgdt	GDT_POINTER(%rip)
-
-//=======	load	IDTR
 
 	lidt	IDT_POINTER(%rip)
 
@@ -29,7 +24,6 @@ _start:
 	movq	$0x7E00,	%rsp
 
 //=======	load	cr3
-
 	movq	$0x101000,	%rax
 	movq	%rax,		%cr3
 	movq	switch_seg(%rip),	%rax
@@ -91,8 +85,8 @@ setup_TSS64:
 	shrq $32, %rdx
 	movq %rdx, 72(%rdi)
 
-	mov $0x40, %ax        // offset of tss descriptor in gdt
-	ltr %ax
+	//mov $0x40, %ax        // offset of tss descriptor in gdt
+	//ltr %ax						//  ???????????????????
 
 	movq	go_to_kernel(%rip),	%rax		/* movq address */
 	pushq	$0x08
@@ -115,6 +109,7 @@ ignore_int:
 
 	pushq %r8
 	pushq %r9
+	pushq %r10
 	pushq %r11
 	pushq %r12
 	pushq %r13
