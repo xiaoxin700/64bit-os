@@ -102,3 +102,53 @@ error_code:
     callq   *%rdx
 
     jmp ret_from_exception
+
+ENTRY(nmi)
+    pushq %rax
+    cld;
+    pushq %rax
+
+    pushq %rax
+    movq %es, %rax
+    pushq %rax
+    movq %es, %rax
+    pushq %rax
+    xorq %rax, %rax
+
+    pushq %rbp
+    pushq %rdi
+    pushq %rsi
+    pushq %rdx
+    pushq %rcx
+    pushq %rbx
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13;
+    pushq %r14
+    pushq %r15
+
+    movq $0x10, %rdx
+    movq %rdx, %ds
+    movq %rdx, %es
+
+    movq $0, %rsi
+    movq %rsp, %rdi
+
+    callq do_nmi
+
+    jmp RESTORE_ALL
+
+ENTRY(invalid_TSS)
+        pushq %rax
+        leaq do_invalid_TSS(%rip), %rax
+        xchgq %rax, (%rsp)
+        jmp error_code
+
+ENTRY(page_fault)
+    pushq %rax
+    leaq do_page_fault(%rip), %rax
+    xchgq %rax, (%rsp)
+    jmp error_code

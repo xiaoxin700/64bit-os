@@ -7,6 +7,9 @@
 #include "lib.h"
 
 void divide_error();
+void nmi();
+void page_fault();
+void invalid_TSS();
 
 void sys_vector_init();
 
