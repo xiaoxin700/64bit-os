@@ -79,6 +79,7 @@ void Start_Kernel(void) {
     color_printk(RED, BLACK, "memory init\n");
     init_memory();
 
+    /*
     color_printk(RED, BLACK, "memory_management_struct.bits_map:%#018lx\n", *memory_management_struct.bits_map);
     color_printk(RED, BLACK, "memory_management_struct.bits_map:%#018lx\n", *(memory_management_struct.bits_map + 1));
 
@@ -92,6 +93,10 @@ void Start_Kernel(void) {
 
     color_printk(RED,BLACK,"memory_management_struct.bits_map:%#018lx\n",*memory_management_struct.bits_map);
 	color_printk(RED,BLACK,"memory_management_struct.bits_map:%#018lx\n",*(memory_management_struct.bits_map + 1));
+    */
 
+    color_printk(RED, BLACK, "interrupt init\n");
+    init_interrupt();
+    
     while(1);
 }
